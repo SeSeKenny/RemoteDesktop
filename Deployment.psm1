@@ -802,7 +802,7 @@ param (
                     $FinalLicenseServers = $CurrLicenseSettings.LicenseServer + $ValidRDServers | Get-Unique
                     
                     #remove any entry came because of case difference
-                    $FinalLicenseServers = $FinalLicenseServers | %{$_.ToUpper()} | Get-Unique
+                    $FinalLicenseServers = $FinalLicenseServers | ForEach-Object {$_.ToUpper()} | Get-Unique
                      
                     $CurrentLicenseMode = $CurrLicenseSettings.Mode
 
@@ -830,7 +830,7 @@ param (
 
                 if (!$ConfigError)
                 {                
-                    $wmic = gwmi -Namespace ROOT\cimv2\rdms -Class Win32_RDMSDeploymentSettings -List -ComputerName $ConnectionBroker -Authentication PacketPrivacy
+                    $wmic = Get-WmiObject -Namespace ROOT\cimv2\rdms -Class Win32_RDMSDeploymentSettings -List -ComputerName $ConnectionBroker -Authentication PacketPrivacy
                     $wmic.SetStringProperty('DeploymentExternalGatewayName',$GatewayExternalFqdn) | Out-Null 
 
                     # Only update with eFQDN as the gateway name when there is no gateway already specified
@@ -1174,7 +1174,7 @@ param (
             if (!$ConfigError)
             {
                 $CurrLicenseSettings = Get-RDLicenseConfiguration -ConnectionBroker $ConnectionBroker
-                $FinalLicenseServers = $CurrLicenseSettings.LicenseServer | ?{ $_ -notin $ValidRDServers}
+                $FinalLicenseServers = $CurrLicenseSettings.LicenseServer | Where-Object { $_ -notin $ValidRDServers}
                 if($FinalLicenseServers -eq $null)
                 {
                     $FinalLicenseServers = @()
@@ -1182,7 +1182,7 @@ param (
                 else
                 {
                     #remove any entry came because of case difference
-                    $FinalLicenseServers = $FinalLicenseServers | %{$_.ToUpper()} | Get-Unique
+                    $FinalLicenseServers = $FinalLicenseServers | ForEach-Object {$_.ToUpper()} | Get-Unique
                 }
                 
                 $CurrentLicenseMode = $CurrLicenseSettings.Mode
@@ -1223,7 +1223,7 @@ param (
                     Set-RDDeploymentGatewayConfiguration -ConnectionBroker $ConnectionBroker -GatewayMode ([Microsoft.RemoteDesktopServices.Management.GatewayUsage]::DoNotUse).value__ -Force
                 }
                 
-                $wmic = gwmi -Namespace ROOT\cimv2\rdms -Class Win32_RDMSDeploymentSettings -List -ComputerName $ConnectionBroker -Authentication PacketPrivacy
+                $wmic = Get-WmiObject -Namespace ROOT\cimv2\rdms -Class Win32_RDMSDeploymentSettings -List -ComputerName $ConnectionBroker -Authentication PacketPrivacy
                 $wmic.RemoveDeploymentSetting('DeploymentExternalGatewayName') | Out-Null 
             }
         }
@@ -1363,7 +1363,7 @@ param (
     }  
 
      $servers | 
-    % {
+    ForEach-Object {
         $installedRoles = @();
 
         if($_.IsVirtualizationHost -eq $true)
@@ -1993,7 +1993,7 @@ param (
             }
         }
         #update connections strings in RDMS database (only on the active broker)
-        $wmic = gwmi -Namespace ROOT\cimv2\rdms -Class Win32_RDMSDeploymentSettings -List -ComputerName $ConnectionBroker -Authentication PacketPrivacy
+        $wmic = Get-WmiObject -Namespace ROOT\cimv2\rdms -Class Win32_RDMSDeploymentSettings -List -ComputerName $ConnectionBroker -Authentication PacketPrivacy
         $OldRdmsSecondaryConnStr = $wmic.GetSecondaryConnectionString().SecondaryConnectionString
 
         $wmic.RemoveDeploymentSetting('DatabaseSecondaryConnectionString') | Out-Null
@@ -2015,7 +2015,7 @@ param (
             }
         }
         #reset values for RDMS as well (on active broker only)
-        $wmic = gwmi -Namespace ROOT\cimv2\rdms -Class Win32_RDMSDeploymentSettings -List -ComputerName $ConnectionBroker -Authentication PacketPrivacy
+        $wmic = Get-WmiObject -Namespace ROOT\cimv2\rdms -Class Win32_RDMSDeploymentSettings -List -ComputerName $ConnectionBroker -Authentication PacketPrivacy
         if(![string]::IsNullOrEmpty($OldRdmsSecondaryConnStr))
         {        
             $wmic.SetSecondaryConnectionString($OldRdmsSecondaryConnStr) | Out-Null

@@ -284,7 +284,7 @@ function Move-VirtualDesktop
         Copy-GoldLocally -DestinationHost:$DestinationHost -BaseVmLocation:$ProvProps.MasterVmLocation `
                         -CollectionName:$VirtualDesktop.CollectionAlias -LocalCacheLocation:$GoldCacheLocation
 
-        Sleep 5
+        Start-Sleep -Seconds 5
     }
 
     # Check if the source hyper-v host is same as local host, where script is being executed.

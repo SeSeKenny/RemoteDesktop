@@ -24,11 +24,11 @@ param (
     switch ($PsCmdlet.ParameterSetName)
     {
         "NoMap"     {
-                        $ParameterName | ?{$BoundParameters.ContainsKey($_)} | %{$params[$_] = $BoundParameters[$_]}
+                        $ParameterName | Where-Object {$BoundParameters.ContainsKey($_)} | ForEach-Object {$params[$_] = $BoundParameters[$_]}
                         break
                     }
         "Map"     {
-                        $ParameterMap.Keys | ?{$BoundParameters.ContainsKey($_)} | %{$params[$ParameterMap[$_]] = $BoundParameters[$_]}
+                        $ParameterMap.Keys | Where-Object {$BoundParameters.ContainsKey($_)} | ForEach-Object {$params[$ParameterMap[$_]] = $BoundParameters[$_]}
                         break
                     }
     }
@@ -102,7 +102,7 @@ param (
         return $false
     }
     
-    $notRunningServices = Invoke-Command -ScriptBlock {@(Get-Service -Name WinRM, 'MSSQL$MICROSOFT##WID', RDMS, TScPubRPC, WinMgmt | where Status -ne Running | foreach DisplayName) } `
+    $notRunningServices = Invoke-Command -ScriptBlock {@(Get-Service -Name WinRM, 'MSSQL$MICROSOFT##WID', RDMS, TScPubRPC, WinMgmt | Where-Object Status -ne Running | ForEach-Object DisplayName) } `
                                             -ComputerName $RDManagementServer `
                                             @userContext
     
@@ -169,7 +169,7 @@ param (
         }
         else
         {
-            $hasRdshServers = Invoke-Command  -ScriptBlock { @(Get-WmiObject -Namespace ROOT\cimv2\rdms -Class Win32_RDMSJoinedNode | where IsRdsh).Count -gt 0 } `
+            $hasRdshServers = Invoke-Command  -ScriptBlock { @(Get-WmiObject -Namespace ROOT\cimv2\rdms -Class Win32_RDMSJoinedNode | Where-Object IsRdsh).Count -gt 0 } `
                                                 -ComputerName $RDManagementServer `
                                                 @userContext
         }
@@ -233,7 +233,7 @@ param (
         else
         {
             #use old method 
-            $hasRdvhServers = Invoke-Command  -ScriptBlock { @(Get-WmiObject -Namespace ROOT\cimv2\rdms -Class Win32_RDMSJoinedNode | where IsRdvh).Count -gt 0 } `
+            $hasRdvhServers = Invoke-Command  -ScriptBlock { @(Get-WmiObject -Namespace ROOT\cimv2\rdms -Class Win32_RDMSJoinedNode | Where-Object IsRdvh).Count -gt 0 } `
                                         -ComputerName $RDManagementServer `
                                         @userContext
             
@@ -1066,7 +1066,7 @@ param (
             $directoryEntry = New-Object System.DirectoryServices.DirectoryEntry($ldapDomain)
             $ouSearch = New-Object System.DirectoryServices.DirectorySearcher($directoryEntry)
             $ouSearch.Filter = $filter
-            $distinguishedName = $ouSearch.Findall() | %{([ADSI]($_.Path)).distinguishedName}
+            $distinguishedName = $ouSearch.Findall() | ForEach-Object {([ADSI]($_.Path)).distinguishedName}
         }
 
         Write-Debug ("Distinguished Name: " + $distinguishedName)
@@ -1318,7 +1318,7 @@ function Set-RemoteWebConfig {
         param($workspaceName)
         try
         {
-            $path = echo $env:windir\Web\RDWeb\Web.Config;
+            $path = Write-Output $env:windir\Web\RDWeb\Web.Config;
             $indentation = 4;        
             $xml = New-Object System.Xml.XmlDocument;
             $xml.Load($path);
@@ -1373,7 +1373,7 @@ param (
 )
 
     $results = Invoke-Command -ScriptBlock {
-        $path = echo $env:windir\Web\RDWeb\Web.Config;
+        $path = Write-Output $env:windir\Web\RDWeb\Web.Config;
         Test-Path -Path $path -PathType Leaf
     } `
     -ComputerName $RemoteServer `
@@ -1563,7 +1563,7 @@ param (
     $objUser = ConvertTo-NtAccount(Get-ResourceString SidEveryone)
 
     #get ACLs for given UserVhd path
-    $acls = Invoke-Command -ScriptBlock {Get-Acl -Path $UserVhdPath | select -expand access}
+    $acls = Invoke-Command -ScriptBlock {Get-Acl -Path $UserVhdPath | Select-Object -expand access}
     foreach($acl in $acls)
     {
         if($objUser.Value -eq $acl.IdentityReference)
@@ -1692,7 +1692,7 @@ param (
         if($activeBroker.ServerName.ToUpper().Equals($ConnectionBroker.ToUpper()))
         {
             #if this one fails - the connection string is still not good
-            $wmic = gwmi -Namespace ROOT\cimv2\rdms -Class Win32_RDMSDeploymentSettings -List -ComputerName $ConnectionBroker -Authentication PacketPrivacy
+            $wmic = Get-WmiObject -Namespace ROOT\cimv2\rdms -Class Win32_RDMSDeploymentSettings -List -ComputerName $ConnectionBroker -Authentication PacketPrivacy
     
             #reset primary connection string - is required
             $wmic.SetConnectionString($DatabaseConnectionString) | Out-Null
@@ -1782,7 +1782,7 @@ param (
                         #update connections strings in RDMS database (only on the active broker)
                        if($activeBroker.ServerName.ToUpper().Equals($broker.Server.ToUpper()))
                        {
-                            $wmic = gwmi -Namespace ROOT\cimv2\rdms -Class Win32_RDMSDeploymentSettings -List -ComputerName $broker.Server -Authentication PacketPrivacy
+                            $wmic = Get-WmiObject -Namespace ROOT\cimv2\rdms -Class Win32_RDMSDeploymentSettings -List -ComputerName $broker.Server -Authentication PacketPrivacy
     
                             #reset primary connection string - is required
                             $wmic.SetConnectionString($DatabaseConnectionString) | Out-Null
@@ -1943,7 +1943,7 @@ param (
         #update connections strings in RDMS database (only on the active broker)
         if($isWin10OrLater)
         {
-            $wmic = gwmi -Namespace ROOT\cimv2\rdms -Class Win32_RDMSDeploymentSettings -List -ComputerName $ConnectionBroker -Authentication PacketPrivacy
+            $wmic = Get-WmiObject -Namespace ROOT\cimv2\rdms -Class Win32_RDMSDeploymentSettings -List -ComputerName $ConnectionBroker -Authentication PacketPrivacy
             $OldRdmsPrimaryConnStr = $wmic.GetConnectionString().ConnectionString
             $OldRdmsSecondaryConnStr = $wmic.GetSecondaryConnectionString().SecondaryConnectionString
 
@@ -1959,7 +1959,7 @@ param (
         else
         {
             #update connections strings in RDMS database
-            $wmic = gwmi -Namespace ROOT\cimv2\rdms -Class Win32_RDMSDeploymentSettings -List -ComputerName $ConnectionBroker -Authentication PacketPrivacy
+            $wmic = Get-WmiObject -Namespace ROOT\cimv2\rdms -Class Win32_RDMSDeploymentSettings -List -ComputerName $ConnectionBroker -Authentication PacketPrivacy
             $OldRdmsPrimaryConnStr = $wmic.GetStringProperty('DatabaseConnectionString')
             #DatabaseConnectionString cannot be null for legacy Windows OS: Windows 2012 R2 or Windows 2012
             $wmic.SetStringProperty('DatabaseConnectionString',$DatabaseConnectionString) | Out-Null 
@@ -2000,7 +2000,7 @@ param (
         }
        
         #reset values for RDMS as well (on active broker only)
-        $wmic = gwmi -Namespace ROOT\cimv2\rdms -Class Win32_RDMSDeploymentSettings -List -ComputerName $ConnectionBroker -Authentication PacketPrivacy
+        $wmic = Get-WmiObject -Namespace ROOT\cimv2\rdms -Class Win32_RDMSDeploymentSettings -List -ComputerName $ConnectionBroker -Authentication PacketPrivacy
 
          if(Test-IsWindows10OrLater($ConnectionBroker))
          {            

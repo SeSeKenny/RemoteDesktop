@@ -143,7 +143,7 @@ param (
     
     if ((-not $Force) -and ($LicenseServer.Count -ne 0))
     {
-        $invalidServer = @($LicenseServer | ?{-not (Test-LicenseServer $_)})
+        $invalidServer = @($LicenseServer | Where-Object {-not (Test-LicenseServer $_)})
         if ($invalidServer)
         {
             $message = Get-ResourceString InvalidLicenseServer ($invalidServer -join ",")

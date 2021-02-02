@@ -1275,7 +1275,7 @@ param(
         {
             return
         }
-	    $virtualDesktopStatus= ($jobStatus.VirtualDesktopStatus | Sort -property VirtualDesktopName)
+	    $virtualDesktopStatus= ($jobStatus.VirtualDesktopStatus | Sort-Object -property VirtualDesktopName)
         foreach($vmStatus in $virtualDesktopStatus)
         {
             if(![string]::IsNullOrEmpty( $vmStatus.Error ))
@@ -1839,7 +1839,7 @@ param(
                             New-Object Microsoft.RemoteDesktopServices.Management.RDVirtualDesktop `
                                 -ArgumentList $_.Name, $collAliasToNameMap[$_.CollectionAlias], $_.HostName,  $_.VMState, $_.Status
                          } `
-            | Sort CollectionName,virtualDesktopName
+            | Sort-Object CollectionName,virtualDesktopName
 
         if($VirtualDesktops.Count -ne 0)
         {
